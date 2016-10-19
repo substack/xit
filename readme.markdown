@@ -25,10 +25,13 @@ usage:
 
     Toggle which of the two displays are active.
 
+  xit off
+
+    Turn off external display.
+
   xit reset
 
     Put everything back to normal.
-
 ```
 
 # install
