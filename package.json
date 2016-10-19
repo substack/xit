@@ -1,8 +1,10 @@
 {
   "name": "xit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "configure an external display on linux",
-  "bin": { "xit": "bin/cmd.js" },
+  "bin": {
+    "xit": "bin/cmd.js"
+  },
   "dependencies": {
     "minimist": "~0.0.5",
     "xrandr-parse": "~0.1.1"
