@@ -11,27 +11,35 @@ var argv = minimist(process.argv.slice(2), {
 });
 if (argv.h || argv.help) return usage(0);
 
-if (argv._[0] === 'mirror') {
+function getDisplays (done) {
     query(function (err, displays) {
-        if (err) return exit(err);
+        if (err) return done(err);
         var keys = Object.keys(displays);
-        if (keys.length === 0) return exit('no displays detected');
-        
+        if (keys.length === 0) return done('no displays detected');
+
         var primary = argv.primary || keys.filter(function (key) {
             return displays[key].index === 0;
         })[0];
-        if (!primary) return exit('no primary display detected');
-        
+        if (!primary) return done('no primary display detected');
+
         var target = argv.target || keys.filter(function (key) {
             return key !== primary && displays[key].connected;
         })[0];
-        if (!target) return exit('no target display detected');
-        
+        if (!target) return done('no target display detected');
+
         var dp = displays[primary];
-        if (!dp) return exit('requested primary display not found');
+        if (!dp) return done('requested primary display not found');
         var dt = displays[target];
-        if (!dt) return exit('requested target display not found');
-        
+        if (!dt) return done('requested target display not found');
+
+        done(null, primary, target, dp, dt)
+    })
+}
+
+if (argv._[0] === 'mirror') {
+    getDisplays(function (err, primary, target, dp, dt) {
+        if (err) return exit(err);
+
         var pratio = dp.modes[0].width / dp.modes[0].height;
         var tratio = dt.modes[0].width / dt.modes[0].height;
         var lmatches = dt.modes.filter(function (mode) {
@@ -41,7 +49,7 @@ if (argv._[0] === 'mirror') {
             return mode.width / mode.height === tratio;
         });
         var tmode = amatches[0] || lmatches[0] || dt.modes[0];
-        
+
         var args = [
             '--output', primary,
             '--mode', dp.width + 'x' + dp.height,
@@ -53,29 +61,17 @@ if (argv._[0] === 'mirror') {
     });
 }
 else if (argv._[0] === 'toggle') {
-    query(function (err, displays) {
-        var keys = Object.keys(displays);
-        if (keys.length === 0) return exit('no displays detected');
-
-        var primary = argv.primary || keys.filter(function (key) {
-          // console.log('display', displays[key])
-            return displays[key].index === 0;
-        })[0];
-        if (!primary) return exit('no primary display detected');
-
-        var target = argv.target || keys.filter(function (key) {
-            return key !== primary && displays[key].connected;
-        })[0];
-        if (!target) return exit('no target display detected');
+    getDisplays(function (err, primary, target, dp, dt) {
+        if (err) return exit(err);
 
         var args = []
 
-        if (!displays[primary]['native'] && displays[target]['native']) {
+        if (!dp['native'] && dt['native']) {
             args = [
                 '--output', primary, '--auto',
                 '--output', target, '--off'
             ];
-        } else if (!displays[target]['native'] && displays[primary]['native']) {
+        } else if (!dt['native'] && dp['native']) {
             args = [
                 '--output', target, '--auto',
                 '--output', primary, '--off'
@@ -88,27 +84,16 @@ else if (argv._[0] === 'toggle') {
     });
 }
 else if (/^(right|left|top|bottom|above|below)$/.test(argv._[0])) {
-    query(function (err, displays) {
-        var keys = Object.keys(displays);
-        if (keys.length === 0) return exit('no displays detected');
-        
-        var primary = argv.primary || keys.filter(function (key) {
-            return displays[key].index === 0;
-        })[0];
-        if (!primary) return exit('no primary display detected');
-        
-        var target = argv.target || keys.filter(function (key) {
-            return key !== primary && displays[key].connected;
-        })[0];
-        if (!target) return exit('no target display detected');
-        
+    getDisplays(function (err, primary, target, dp, dt) {
+        if (err) return exit(err);
+
         var xof = {
             left: 'left-of',
             right: 'right-of',
             'top': 'above',
             bottom: 'below'
         }[argv._[0]] || xof;
-        
+
         var args = [
             '--output', target, '--auto',
             '--' + xof, primary
@@ -117,16 +102,9 @@ else if (/^(right|left|top|bottom|above|below)$/.test(argv._[0])) {
     });
 }
 else if (argv._[0] === 'reset') {
-    query(function (err, displays) {
-        var keys = Object.keys(displays);
-        if (keys.length === 0) return exit('no displays detected');
-        var primary = argv.primary || keys.filter(function (key) {
-            return displays[key].index === 0;
-        })[0];
-        if (!primary) return exit('no primary display detected');
-        var target = argv.target || keys.filter(function (key) {
-            return key !== primary && displays[key].connected;
-        })[0];
+    getDisplays(function (err, primary, target, dp, dt) {
+        if (err) return exit(err);
+
         if (!target) {
           spawn('xrandr', [ '--auto' ], { stdio: 'inherit' });
         } else {
@@ -135,20 +113,9 @@ else if (argv._[0] === 'reset') {
     });
 }
 else if (argv._[0] === 'off') {
-    query(function (err, displays) {
-        var keys = Object.keys(displays);
-        if (keys.length === 0) return exit('no displays detected');
-        
-        var primary = argv.primary || keys.filter(function (key) {
-            return displays[key].index === 0;
-        })[0];
-        if (!primary) return exit('no primary display detected');
-        
-        var target = argv.target || keys.filter(function (key) {
-            return key !== primary && displays[key].connected;
-        })[0];
-        if (!target) return exit('no target display detected');
-        
+    getDisplays(function (err, primary, target, dp, dt) {
+        if (err) return exit(err);
+
         var args = [
             '--output', target, '--off',
             '--output', primary, '--auto'
