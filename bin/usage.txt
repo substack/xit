@@ -10,6 +10,10 @@ usage:
     Set up the display to the right, left, top, or bottom of the primary
     display.
 
+  xit toggle
+
+    Toggle which of the two displays are active.
+
   xit reset
 
     Put everything back to normal.
