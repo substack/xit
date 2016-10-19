@@ -84,6 +84,28 @@ else if (/^(right|left|top|bottom|above|below)$/.test(argv._[0])) {
 else if (argv._[0] === 'reset') {
     spawn('xrandr', [ '--auto' ], { stdio: 'inherit' });
 }
+else if (argv._[0] === 'off') {
+    query(function (err, displays) {
+        var keys = Object.keys(displays);
+        if (keys.length === 0) return exit('no displays detected');
+        
+        var primary = argv.primary || keys.filter(function (key) {
+            return displays[key].index === 0;
+        })[0];
+        if (!primary) return exit('no primary display detected');
+        
+        var target = argv.target || keys.filter(function (key) {
+            return key !== primary && displays[key].connected;
+        })[0];
+        if (!target) return exit('no target display detected');
+        
+        var args = [
+            '--output', target, '--off',
+            '--output', primary, '--auto'
+        ];
+        spawn('xrandr', args, { stdio: 'inherit' });
+    });
+}
 else usage(1);
 
 function usage (code) {
